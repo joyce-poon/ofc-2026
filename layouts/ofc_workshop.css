@@ -1,0 +1,100 @@
+/* ── OFC Workshop Theme ── */
+/* Deep Indigo + Teal — high contrast for photonics presentation */
+
+/* Load Open Sans from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+/* Theme variables */
+:root {
+    --marimo-heading-font: 'Open Sans', 'Noto Sans', 'Roboto', sans-serif;
+    --marimo-monospace-font: 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* Global sans-serif font */
+body,
+body * {
+    font-family: 'Open Sans', 'Noto Sans', 'Roboto', sans-serif;
+}
+
+/* Presentation minimum font size — 16px floor */
+.paragraph,
+p, li, td, th, blockquote, span, label {
+    font-size: max(16px, inherit) !important;
+    line-height: 1.5;
+}
+
+/* Larger font in slides mode */
+.swiper-slide p,
+.swiper-slide li,
+.swiper-slide td,
+.swiper-slide th,
+.swiper-slide blockquote,
+.swiper-slide span,
+.swiper-slide label {
+    font-size: max(20px, inherit) !important;
+}
+
+/* Titles — deep indigo, bold, larger */
+h1 {
+    color: #1A237E !important;
+    font-weight: 700 !important;
+    font-size: 3.0rem !important;
+    font-family: 'Open Sans', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+h2 {
+    color: #1A237E !important;
+    font-weight: 700 !important;
+    font-size: 40px !important;
+    font-family: 'Open Sans', 'Noto Sans', 'Roboto', sans-serif !important;
+}
+
+/* Subtitles (h3) — teal */
+h3 {
+    color: #00838F !important;
+    font-weight: 600 !important;
+    font-size: 28px !important;
+}
+
+/* Bold text — inherit parent color (no override) */
+
+/* Tables — readable in presentation */
+table {
+    font-size: 16px !important;
+}
+
+/* Alternating row colors — light blue and white */
+tr:nth-child(even) {
+    background-color: #E3F2FD !important;
+}
+tr:nth-child(odd) {
+    background-color: #FFFFFF !important;
+}
+
+/* Table headers — deep indigo to match titles */
+th {
+    color: #1A237E !important;
+    font-weight: 700 !important;
+}
+
+/* Slider/dropdown labels */
+label {
+    font-size: 15px !important;
+}
+
+/* Image captions */
+figcaption {
+    font-size: 14px !important;
+    color: #455A64 !important;
+}
+
+/* Blockquote accent — teal left border */
+blockquote {
+    border-left: 4px solid #00838F !important;
+    color: #263238 !important;
+}
+
+/* Links — deep orange for visibility */
+a {
+    color: #E65100 !important;
+}
