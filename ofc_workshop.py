@@ -1119,30 +1119,30 @@ def _(IMG, mo):
 
     _col_ayar = mo.vstack([
         mo.md("""### Ayar Labs with Sivers
-- Monolithic InP DFB array
-- 16\u03bb \u00d7 200 GHz"""),
+    - Monolithic InP DFB array
+    - 16\u03bb \u00d7 200 GHz"""),
         _cimg(IMG / "ayar-laser.png", "90%"),
     ], gap=0.3)
 
     _col_scintil = mo.vstack([
         mo.md("""### Scintil Photonics
-- Hybrid InP-on-Si
-- 16\u03bb \u00d7 (100 or 200 GHz)"""),
+    - Hybrid InP-on-Si
+    - 16\u03bb \u00d7 (100 or 200 GHz)"""),
         _cimg(IMG / "scintil-laser.png", "90%"),
     ], gap=0.3)
 
     _col_lm = mo.vstack([
         mo.md("""### Lightmatter
-- Single-chip integrated
-- 16\u03bb \u00d7 200 GHz, 32 fiber output
-- 100 mW per \u03bb"""),
+    - Single-chip integrated
+    - 16\u03bb \u00d7 200 GHz, 32 fiber output
+    - 100 mW per \u03bb"""),
         _cimg(IMG / "Lightmatter-laser.png", "90%"),
     ], gap=0.3)
 
     _col_xscape = mo.vstack([
         mo.md("""### XScape Photonics
-- Comb laser
-- Up to 16\u03bb \u00d7 200 GHz"""),
+    - Comb laser
+    - Up to 16\u03bb \u00d7 200 GHz"""),
         _cimg(IMG / "xscape-laser.jpg", "90%"),
     ], gap=0.3)
 
@@ -1223,8 +1223,8 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
+def _(IMG, mo):
+    _summary = mo.md("""
     ## Summary
 
     ### System requirements on scale-up networks
@@ -1234,14 +1234,21 @@ def _(mo):
     - Critical for deployment: Reliability, link stability
 
     ### Co-packaged optics for 1.6 Tbps/fiber and beyond
-    - WDM + 100+G lane rate → bandwidth density with 16λ laser arrays
+    - WDM + 100+G lane rate \u2192 bandwidth density with 16\u03bb laser arrays
     - NRZ for lowest latency
-    - State of the art: MRM 16λ × 112G-PAM4 → **1.6 Tbps per fiber**
+    - State of the art: MRM 16\u03bb \u00d7 112G-PAM4 \u2192 **1.6 Tbps per fiber**
 
     ### Major opportunities
     - Components: fiber-to-chip couplers, efficient modulators, reliable lasers
     - Links: Telemetry, redundancy, network management for error-free operation
     """)
+
+    _verified = mo.hstack([
+        mo.md('<span style="font-size: 1em; opacity: 0.8;">Notebook verified by</span>'),
+        mo.image(src=IMG / "axiomatic-logo.png", height=32),
+    ], justify="end", align="center", gap=0.4)
+
+    mo.vstack([_summary, _verified])
     return
 
 
