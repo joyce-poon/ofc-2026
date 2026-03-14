@@ -28,8 +28,16 @@ def _():
     import numpy as np
     import math
     from pathlib import Path
+    import sys as _sys
 
-    IMG = Path("images")
+    if "pyodide" in _sys.modules:
+        class _UrlPath:
+            """In WASM, produce string URLs so mo.image fetches via HTTP, not filesystem."""
+            def __init__(self, base): self._base = base
+            def __truediv__(self, name): return f"{self._base}/{name}"
+        IMG = _UrlPath("./images")
+    else:
+        IMG = Path("images")
 
     # NVL72/144: 18 NVLink5 ports × 400 Gbps/port; NVL576: 1.5 PB/s total (NVIDIA)
     RACKS = {
