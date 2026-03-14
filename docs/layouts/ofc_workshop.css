@@ -94,6 +94,11 @@ blockquote {
     color: #263238 !important;
 }
 
+/* Accordion labels — match default body font size */
+details > summary {
+    font-size: 16px !important;
+}
+
 /* Links — deep orange for visibility */
 a {
     color: #E65100 !important;
