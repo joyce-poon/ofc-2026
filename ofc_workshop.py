@@ -14,7 +14,6 @@ __generated_with = "0.20.4"
 app = marimo.App(
     width="full",
     app_title="Energy-Efficient, Bandwidth-Dense Co-Packaged Optics for AI Scale-Up",
-    layout_file="layouts/ofc_workshop.slides.json",
     css_file="layouts/ofc_workshop.css",
     html_head_file="layouts/head.html",
 )
@@ -32,10 +31,14 @@ def _():
 
     IMG = Path("images")
 
+    # NVL72/144: 18 NVLink5 ports × 400 Gbps/port; NVL576: 1.5 PB/s total (NVIDIA)
     RACKS = {
-        "nvl72": {"name": "GB200 NVL72", "year": 2025, "gpus": 72, "bw_per_gpu_tbps": 7.2, "rack_power_kw": 140},
-        "nvl144": {"name": "Vera Rubin NVL144", "year": 2026, "gpus": 144, "bw_per_gpu_tbps": 7.2, "rack_power_kw": 210},
-        "nvl576": {"name": "Rubin Ultra NVL576", "year": 2027, "gpus": 576, "bw_per_gpu_tbps": 10.4, "rack_power_kw": 600},
+        "nvl72": {"name": "GB200 NVL72", "year": 2025, "gpus": 72,
+                  "bw_per_gpu_tbps": 18 * 400 / 1000, "rack_power_kw": 140},
+        "nvl144": {"name": "Vera Rubin NVL144", "year": 2026, "gpus": 144,
+                   "bw_per_gpu_tbps": 18 * 400 / 1000, "rack_power_kw": 210},
+        "nvl576": {"name": "Rubin Ultra NVL576", "year": 2027, "gpus": 576,
+                   "bw_per_gpu_tbps": 1.5 * 8 * 1000 / 576 / 2, "rack_power_kw": 600},
     }
 
     TX_PENALTY = {
@@ -268,21 +271,98 @@ def _(IMG, PLOT_FONT, PLOT_TITLE_FONT, RACKS, go, mo):
 
 @app.cell(hide_code=True)
 def _(mo, pd):
-    bw_power_df = pd.DataFrame({
-        "": ["GPUs per rack", "Scale-up tech", "BW/GPU (Tbps, uni)", "Lane rate (Gbps)",
-             "BW/rack (Tbps, bi)", "Rack power (kW)", "% Power for IO"],
-        "GB NVL72": ["72", "Copper", "7.2", "224", "1036", "~140", "5-10%"],
-        "Ironwood": ["64", "Copper", "4.8", "112", "615", "-", "-"],
-        "CloudMatrix": ["32", "LPO", "2.8", "112", "180", "600", "-"],
-        "VR NVL144": ["144", "Copper", "7.2", "224", "2080", "190-230", "~10-20%"],
-        "VR NVL576": ["576", "Copper?", "10.4", "224?", "12000", "600", "20-40%??"],
+    _IO_PJB_LO, _IO_PJB_HI = 10, 20  # pJ/b assumed range
+
+    GPU_SYSTEMS = [
+        {"name": "GB NVL72", "gpus": 72, "tech": "Copper",
+         "ports_per_gpu": 18, "bw_per_port_gbps": 400,
+         "lane_rate_gbps": 224, "rack_power_kw": 140},
+        {"name": "Ironwood", "gpus": 64, "tech": "Copper",
+         "lanes_per_gpu": 64, "lane_rate_gbps": 112,
+         "rack_power_kw": None},
+        {"name": "CloudMatrix", "gpus": 32, "tech": "LPO",
+         "ports_per_gpu": 7, "bw_per_port_gbps": 400,
+         "lane_rate_gbps": 112, "rack_power_kw": 600},
+        {"name": "VR NVL144", "gpus": 144, "tech": "Copper",
+         "ports_per_gpu": 18, "bw_per_port_gbps": 400,
+         "lane_rate_gbps": 224, "rack_power_kw": (190, 230)},
+        {"name": "VR NVL576", "gpus": 576, "tech": "Copper?",
+         "rack_bw_PBps": 1.5, "lane_rate_gbps": "224?",
+         "rack_power_kw": 600},
+    ]
+
+    for _s in GPU_SYSTEMS:
+        if "ports_per_gpu" in _s:
+            _s["bw_gpu_tbps"] = _s["ports_per_gpu"] * _s["bw_per_port_gbps"] / 1000
+            _s["bw_rack_bidir_pbps"] = (
+                _s["gpus"] * _s["ports_per_gpu"] * _s["bw_per_port_gbps"] * 2 / 1e6)
+        elif "lanes_per_gpu" in _s:
+            _s["bw_gpu_tbps"] = _s["lanes_per_gpu"] * _s["lane_rate_gbps"] / 1000
+            _s["bw_rack_bidir_pbps"] = (
+                _s["gpus"] * _s["lanes_per_gpu"] * _s["lane_rate_gbps"] * 2 / 1e6)
+        elif "rack_bw_PBps" in _s:
+            _s["bw_rack_bidir_pbps"] = _s["rack_bw_PBps"] * 8
+            _s["bw_gpu_tbps"] = _s["bw_rack_bidir_pbps"] * 1000 / _s["gpus"] / 2
+        _bw_bps = _s["bw_rack_bidir_pbps"] * 1e15
+        _s["io_kw_lo"] = _IO_PJB_LO * 1e-12 * _bw_bps / 1000
+        _s["io_kw_hi"] = _IO_PJB_HI * 1e-12 * _bw_bps / 1000
+
+        _pw = _s["rack_power_kw"]
+        if _pw is None:
+            _s["pct_lo"] = _s["pct_hi"] = None
+        elif isinstance(_pw, tuple):
+            _s["pct_lo"] = _s["io_kw_lo"] / _pw[1] * 100
+            _s["pct_hi"] = _s["io_kw_hi"] / _pw[0] * 100
+        else:
+            _s["pct_lo"] = _s["io_kw_lo"] / _pw * 100
+            _s["pct_hi"] = _s["io_kw_hi"] / _pw * 100
+
+    _rows = {}
+    for _s in GPU_SYSTEMS:
+        _pw = _s["rack_power_kw"]
+        if "ports_per_gpu" in _s:
+            _io = f'{_s["ports_per_gpu"]} ports'
+            _bwl = str(_s["bw_per_port_gbps"])
+        elif "lanes_per_gpu" in _s:
+            _io = f'{_s["lanes_per_gpu"]} lanes'
+            _bwl = str(_s["lane_rate_gbps"])
+        else:
+            _io, _bwl = "\u2014", "\u2014"
+
+        if _pw is None:
+            _pw_str = "\u2014"
+        elif isinstance(_pw, tuple):
+            _pw_str = f"{_pw[0]}\u2013{_pw[1]}"
+        else:
+            _pw_str = f"~{_pw}"
+
+        _pct = ("\u2014" if _s["pct_lo"] is None
+                else f'{_s["pct_lo"]:.0f}\u2013{_s["pct_hi"]:.0f}%')
+
+        _rows[_s["name"]] = [
+            str(_s["gpus"]), _s["tech"], _io, _bwl,
+            f'{_s["bw_gpu_tbps"]:.1f}', str(_s["lane_rate_gbps"]),
+            f'{_s["bw_rack_bidir_pbps"]:.1f}', _pw_str,
+            f'{_s["io_kw_lo"]:.0f}\u2013{_s["io_kw_hi"]:.0f}', _pct,
+        ]
+
+    _df = pd.DataFrame({
+        "": ["GPUs per rack", "Scale-up tech", "IO links / GPU",
+             "BW / link (Gbps)", "BW/GPU (Tbps, uni)",
+             "Lane rate (Gbps)", "BW/rack (Pbps, bidir)",
+             "Rack power (kW)", f"IO power (kW) @ {_IO_PJB_LO}\u2013{_IO_PJB_HI} pJ/b",
+             "% Power for IO"],
+        **_rows,
     })
     mo.vstack([
         mo.md("## Bandwidth & Power Requirements"),
-        mo.as_html(bw_power_df),
-        mo.md('<div style="background:#FFF3E0; border-left:4px solid #E65100; padding:8px 14px; font-size:18px; border-radius:4px;">As the number of GPUs per rack <b>doubles per year</b>, the scale-up bandwidth also grows. At NVL576, IO could consume <b>20-40%</b> of rack power.</div>'),
+        mo.as_html(_df),
+        mo.md(f"""**Derivations ({_IO_PJB_LO}\u2013{_IO_PJB_HI} pJ/b assumed):** BW/GPU = IO links \u00d7 BW/link &emsp;|\
+    &emsp; BW/rack = GPUs \u00d7 BW/GPU \u00d7 2 (bidir) &emsp;|&emsp; VR NVL576: 1.5 PB/s (NVIDIA) = {1.5*8:.0f} Pbps
+    IO power = pJ/b \u00d7 BW/rack &emsp;|&emsp; % Power = IO power \u00f7 rack power"""),
+        mo.md('<div style="background:#FFF3E0; border-left:4px solid #E65100; padding:8px 14px; font-size:18px; border-radius:4px;">As GPUs per rack increases, IO could consume <b>20-40%</b> of rack power.</div>'),
     ])
-    return
+    return (GPU_SYSTEMS,)
 
 
 @app.cell(hide_code=True)
@@ -292,28 +372,27 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(PLOT_FONT, go, io_pjb_slider, make_subplots, math, mo):
+def _(GPU_SYSTEMS, PLOT_FONT, go, io_pjb_slider, make_subplots, math, mo):
     _pjb = io_pjb_slider.value
 
-    _systems = [
-        {"name": "NVL72", "gpus": 72, "bw_gpu": 7.2, "power_kw": 140},
-        {"name": "Ironwood", "gpus": 64, "bw_gpu": 4.8, "power_kw": None},
-        {"name": "CloudMatrix", "gpus": 32, "bw_gpu": 2.8, "power_kw": 600},
-        {"name": "NVL144", "gpus": 144, "bw_gpu": 7.2, "power_kw": 210},
-        {"name": "NVL576", "gpus": 576, "bw_gpu": 10.4, "power_kw": 600},
-    ]
-
-    _names = [s["name"] for s in _systems]
-    _total_bw = [s["gpus"] * s["bw_gpu"] * 2 for s in _systems]
-    _bw_per_gpu = [s["bw_gpu"] for s in _systems]
-    _power = [s["power_kw"] if s["power_kw"] else 0 for s in _systems]
-    _io_pct = []
-    for s in _systems:
-        if s["power_kw"]:
-            _io_kw = s["gpus"] * s["bw_gpu"] * 2 * 1e12 * _pjb * 1e-12 / 1000
-            _io_pct.append(_io_kw / s["power_kw"] * 100)
-        else:
+    _names = [s["name"] for s in GPU_SYSTEMS]
+    _total_bw = [s["bw_rack_bidir_pbps"] * 1000 for s in GPU_SYSTEMS]  # Tbps
+    _bw_per_gpu = [s["bw_gpu_tbps"] for s in GPU_SYSTEMS]
+    _power, _io_pct = [], []
+    for s in GPU_SYSTEMS:
+        _pw = s["rack_power_kw"]
+        if _pw is None:
+            _power.append(0)
             _io_pct.append(0)
+        elif isinstance(_pw, tuple):
+            _pw_mid = (_pw[0] + _pw[1]) / 2
+            _power.append(_pw_mid)
+            _io_kw = s["bw_rack_bidir_pbps"] * 1e15 * _pjb * 1e-12 / 1000
+            _io_pct.append(_io_kw / _pw_mid * 100)
+        else:
+            _power.append(_pw)
+            _io_kw = s["bw_rack_bidir_pbps"] * 1e15 * _pjb * 1e-12 / 1000
+            _io_pct.append(_io_kw / _pw * 100)
 
     _colors = ['#1A237E', '#00838F', '#E65100', '#FFA000', '#2E7D32']
 
@@ -373,7 +452,6 @@ def _(PLOT_FONT, go, io_pjb_slider, make_subplots, math, mo):
         mo.md("## System Comparison"),
         mo.hstack([io_pjb_slider], justify="start"),
         mo.as_html(fig_systems),
-        mo.md(f"Ironwood rack power not disclosed."),
     ])
     return
 
@@ -391,7 +469,7 @@ def _(IMG, mo):
     ])
     _right = mo.image(src=IMG / "packaging_approaches.png", caption="Pluggable \u2192 NPO \u2192 CPO \u2192 Optical Interposer")
     mo.vstack([
-        mo.md("## Why Optics? \u2014 Packaging Approaches"),
+        mo.md("## Optical Advantages"),
         mo.hstack([_left, _right], align="center", gap=2, widths=[0.45, 0.55]),
     ])
     return
@@ -406,13 +484,15 @@ def _(IMG, mo):
     - Training interruptions due to optics: 30% contamination, 70% single-channel failures
     - 90% of single-channel failure = **Laser**"""),
         mo.md("""### Link errors (Meta & Broadcom):
-    - 1049k port device hours \u2192
-      - 1 Pod (8 racks): **50.6 hours**
-      - 16 Pods: **3 hours** """),
+    - Test of Broadcom Tomahawk 5 switches (128 ports @ 400G)
+    - 1049k port device hours is equivalent to 
+      - 1 Pod [(18 ports x 72 GPU)<sub>GPU</sub> + (18 x 72)<sub>switch</sub> x 8 racks] = **50.6 hours**
+      - 16 Pods: **3 hours** 
+    - Temperature in compute tray likely higher than switch"""),
     ])
     _right = mo.vstack([
         mo.image(src=IMG / "huawei_failure_pie.png", width="90%", caption='Compute-node failure sources (<a href="https://www-file.huawei.com/admin/asset/v1/pro/view/e3026ae9d7b946e1b713079865da766b.pdf">Huawei 2024</a>)'),
-        mo.image(src=IMG / "meta_fec_boxplot.png", width="90%", caption="FEC bin vs. port device hours (Amiralizedeh et al., ECOC 2025)"),
+        mo.image(src=IMG / "meta_fec_boxplot.png", width="80%", caption="Amiralizedeh et al., ECOC 2025."),
     ], gap=1)
     _layout = mo.hstack([_left, _right], align="start", gap=2, widths=[0.4, 0.6])
     mo.vstack([mo.md("## Why Not Optics? "), _layout])
@@ -421,17 +501,19 @@ def _(IMG, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    failure_rate_per_1000 = mo.ui.slider(start=1.0, stop=20.0, step=0.5, value=6.3, label="Failure rate (/1000/yr)")
+    failure_rate_per_1000 = mo.ui.slider(start=1.0, stop=20.0, step=0.1, value=6.3, label="Failure rate (/1000/yr)")
     num_pods = mo.ui.slider(start=1, stop=64, step=1, value=16, label="Pods")
-    gpus_per_pod = mo.ui.slider(start=64, stop=1024, step=64, value=576, label="GPUs/pod")
+    gpus_per_rack = mo.ui.slider(start=32, stop=576, step=8, value=72, label="GPUs/rack")
     ports_per_gpu = mo.ui.slider(start=8, stop=36, step=2, value=18, label="Ports/GPU")
-    switch_ports_per_pod = mo.ui.slider(start=0, stop=2048, step=128, value=1296, label="Switch ports/pod")
+    racks_per_pod = mo.ui.slider(start=1, stop=64, step=1, value=8, label="Racks/pod")
+    scaleout_ports_per_rack = mo.ui.slider(start=0, stop=512, step=16, value=0, label="Scale-out ports/rack")
     return (
         failure_rate_per_1000,
-        gpus_per_pod,
+        gpus_per_rack,
         num_pods,
         ports_per_gpu,
-        switch_ports_per_pod,
+        racks_per_pod,
+        scaleout_ports_per_rack,
     )
 
 
@@ -441,16 +523,26 @@ def _(
     PLOT_TITLE_FONT,
     failure_rate_per_1000,
     go,
-    gpus_per_pod,
+    gpus_per_rack,
     mo,
     np,
     num_pods,
     ports_per_gpu,
-    switch_ports_per_pod,
+    racks_per_pod,
+    scaleout_ports_per_rack,
 ):
     _fr = failure_rate_per_1000.value / 1000
     _n_pods = num_pods.value
-    _xcvrs_pod = gpus_per_pod.value * ports_per_gpu.value + switch_ports_per_pod.value
+    _n_racks_pod = racks_per_pod.value
+    _n_gpus_rack = gpus_per_rack.value
+    _n_gpus_pod = _n_gpus_rack * _n_racks_pod
+
+    _scaleup_links_rack = _n_gpus_rack * ports_per_gpu.value
+    _scaleup_xcvrs_rack = _scaleup_links_rack * 2  # both endpoints in same rack (GPU + switch)
+    _scaleout_xcvrs_rack = scaleout_ports_per_rack.value  # local end only; remote end counted on remote rack
+
+    _xcvrs_rack = _scaleup_xcvrs_rack + _scaleout_xcvrs_rack
+    _xcvrs_pod = _xcvrs_rack * _n_racks_pod
     _total_xcvrs = _xcvrs_pod * _n_pods
 
     _fail_yr = _total_xcvrs * _fr
@@ -459,14 +551,16 @@ def _(
 
     _pods_arr = np.arange(1, 65)
     _fig = go.Figure()
-    for _rate in [2.0, 4.0, 6.3, 10.0, 15.0]:
+    for _rate in [2.0, 4.0, 6, 10.0, 15.0]:
         _mtbf_arr = 8760 / (_xcvrs_pod * _pods_arr * _rate / 1000)
         _fig.add_trace(go.Scatter(x=_pods_arr, y=_mtbf_arr, mode="lines", name=f"{_rate}/1k/yr", line=dict(width=2)))
 
-    _fig.add_hline(y=24, line_dash="dash", line_color="#E65100", annotation_text="1 failure/day",
-                   annotation_font=dict(size=14, color="#E65100"))
-    _fig.add_hline(y=1, line_dash="dash", line_color="#C62828", annotation_text="1/hour",
-                   annotation_font=dict(size=14, color="#C62828"))
+    _fig.add_hline(y=24, line_dash="dash", line_color="#E65100")
+    _fig.add_hline(y=1, line_dash="dash", line_color="#C62828")
+    _fig.add_annotation(x=1, y=1.4, text="<b>1 failure/day</b>", showarrow=False, xref="paper",
+                        yanchor="bottom", xanchor="right", font=dict(size=14, color="#E65100"))
+    _fig.add_annotation(x=1, y=0.5, text="<b>1 failure/hour</b>", showarrow=False, xref="paper",
+                        yanchor="top", xanchor="right", font=dict(size=14, color="#C62828"))
     _fig.add_vline(x=_n_pods, line_dash="dot", line_color="#9E9E9E", annotation_text=f"{_n_pods} pods",
                    annotation_font=dict(size=14, color="#1A237E"))
 
@@ -477,20 +571,26 @@ def _(
         legend=dict(title=dict(text="Failure rate", font=dict(size=14)), font=dict(size=14)),
     )
 
+    _so_row = f"\n    | Scale-out transceivers/rack | {_scaleout_xcvrs_rack:,} |" if _scaleout_xcvrs_rack > 0 else ""
     mo.vstack([
         mo.md("## Reliability & Fleet Failure Calculator"),
-        mo.hstack([failure_rate_per_1000, num_pods, gpus_per_pod, ports_per_gpu, switch_ports_per_pod], justify="start", gap=0.5),
+        mo.hstack([failure_rate_per_1000, num_pods, gpus_per_rack, racks_per_pod, ports_per_gpu, scaleout_ports_per_rack], justify="start", gap=0.5),
         mo.hstack([
             mo.md(f"""
     | Metric | Value |
     |:-------|------:|
-    | Transceivers/pod | {_xcvrs_pod:,} |
+    | GPUs/pod | {_n_gpus_pod:,} ({_n_gpus_rack} \u00d7 {_n_racks_pod} racks) |
+    | Links/rack | {_scaleup_links_rack:,} |
+    | Transceivers/rack | {_scaleup_xcvrs_rack:,} (\u00d72: GPU + switch) |{_so_row}
+    | Transceivers/rack | {_xcvrs_rack:,} |
+    | **Transceivers/pod** | **{_xcvrs_pod:,}** |
     | **Fleet total** | **{_total_xcvrs:,}** |
     | Failures/day | {_fail_day:,.1f} |
     | **MTBF** | **{_mtbf:,.1f} hrs** |
-    | Laser failures/yr | {_fail_yr * 0.63:,.0f} |
 
-    > At 2/1000: MTBF = **{8760/(_total_xcvrs*0.002):,.0f} hrs**
+    - Scale-up: each cable has 2 transceivers (GPU-side + switch-side, both in same rack).
+    - Scale-out: each port = 1 local transceivers; remote end counted on its own rack.
+    - At 2/1000: MTBF = **{8760/(_total_xcvrs*0.002):,.0f} hrs**
     """),
             mo.as_html(_fig),
         ], justify="space-around", align="center", widths=[0.35, 0.65]),
@@ -501,24 +601,27 @@ def _(
 @app.cell(hide_code=True)
 def _(IMG, mo):
     _imgs1 = mo.hstack([
-        mo.image(src=IMG / "cowos_coupe.png", width="80%", caption="TSMC CoWoS with Co-Packaged Optics"),
+        mo.image(src=IMG / "cowos_coupe.png", width="100%", caption="TSMC CoWoS with Co-Packaged Optics"),
         mo.image(src=IMG / "coupe_3d_stack.png", width="90%", caption="3D-stacked EIC on PIC (Source: TSMC, OCP APAC 2025)"),
     ], justify="center", gap=2)
     _imgs2 = mo.hstack([
-        mo.image(src=IMG / "fiber_bundle_facet.png", width="70%", caption="Fujikura fiber bundle \u2014 ~30k cores"),
-        mo.image(src=IMG / "multicore_fiber.png", width="80%", caption="Custom MCF with Corning (Azadeh et al., 2022)"),
+        mo.image(src=IMG / "fiber_bundle_facet.png", width="100%", caption="Fujikura fiber bundle, ~30k cores"),
+        mo.image(src=IMG / "multicore_fiber.png", width="100%", caption="Custom MCF with Corning (Azadeh et al., 2022)"),
     ], justify="center", gap=2)
     mo.vstack([
         mo.md("## Bandwidth Density \u2014 3D Integration"),
         _imgs1,
-        mo.md("- UCIe-2.5D interface density: **1-10 Tbps/mm** \u00b7 Compact transceivers (\u2272 55 \u03bcm \u00d7 55 \u03bcm)\n- 10 Tbps/mm \u21d2 **~1.3 Tbps/fiber** @ 127 \u03bcm fiber pitch"),
+        mo.md("""- UCIe-2.5D interface density: **1-10 Tbps/mm** 
+        - 10 Tbps/mm \u21d2 **~1.3 Tbps/fiber** @ 127 \u03bcm fiber pitch
+        - 3D integration \u21d2  Compact transceivers (\u2272 55 \u03bcm \u00d7 55 \u03bcm)"""),
         mo.accordion({"Spatially wide-and-parallel links (side note)": mo.hstack([
             mo.md("""- 10 Tbps/mm \u2192 10 Tbps/mm\u00b2 \u21d2 **100 Gbps / (100 \u03bcm)\u00b2**
     - Multi-core fiber and imaging fiber bundles
-    - Manage inter-core crosstalk
-    - Multimode emission \u21d2 coupling loss to single-mode cores
-    - Thick fiber bundles are stiff
-    - Requires fiber technology and packaging development"""),
+        - Manage inter-core crosstalk
+        - Multimode emission \u21d2 coupling loss to single-mode cores
+        - Thick fiber bundles are stiff
+
+    Requires fiber technology and packaging development!"""),
             _imgs2,
         ], justify="space-around", align="center", widths=[0.45, 0.55])}),
     ])
@@ -527,14 +630,23 @@ def _(IMG, mo):
 
 @app.cell(hide_code=True)
 def _(IMG, mo):
+    def _cimg(src, width):
+        return mo.hstack([mo.image(src=src, width=width)], justify="center")
+
+    def _cap(text):
+        return mo.hstack([mo.md(f'<span style="font-size:16px; color:#555">{text}</span>')], justify="center")
+
     _col_mzm = mo.vstack([
         mo.md("""### Mach-Zehnder Modulators & Lattice Filters
     - **L = 2\u20133 mm**
     - Mature
     - Large footprint, large DWDM circuits
     - EO BW: up to ~90 GHz"""),
-        mo.image(src=IMG / "mzm_photo.jpeg", width="90%", caption="MZM with 16\u03bb MUX/DEMUX"),
-    ], gap=0.5)
+        _cimg(IMG / "mzm_photo.jpeg", "80%"),
+        _cap("MZM"),
+        _cimg(IMG / "mzi-lattice.png", "80%"),
+        _cap("16\u03bb WDM"),
+    ], gap=0.3)
 
     _col_mrm = mo.vstack([
         mo.md("""### Microring Modulators & Filters
@@ -542,10 +654,12 @@ def _(IMG, mo):
     - Compact serial MUX/DEMUX
     - d\u03bb/dT \u2248 60 pm/K (\u221210.5 GHz/K)
     - Thermal stabilization to **~0.5 K**
-    - Highly compact"""),
-        mo.image(src=IMG / "mrm_photo.jpeg", width="80%", caption="MRM (D = 12\u201340 \u03bcm)"),
-        mo.image(src=IMG / "mrm_coupled_rings.png", width="80%", caption="MRM + coupled rings for filter shaping"),
-    ], gap=0.5)
+    """),
+        _cimg(IMG / "mrm_photo.jpeg", "70%"),
+        _cap("MRM (D = 12\u201340 \u03bcm)"),
+        _cimg(IMG / "mrm-crr.png", "120%"),
+        _cap("Serial WDM and coupled ring filter"),
+    ], gap=0.3)
 
     _col_eam = mo.vstack([
         mo.md("""### GeSi Electroabsorption Modulators
@@ -553,12 +667,14 @@ def _(IMG, mo):
     - Bulk GeSi: operates near 1550 nm
     - Bandgap shift d\u03bb/dT = 0.8 nm/K
     - Thermal stabilization to **~5 K**"""),
-        mo.image(src=IMG / "eam_photo.jpeg", width="80%", caption="GeSi EAM"),
-        mo.md("D. Feng et al. (Kotura), JSTQE, 2013."),
-    ], gap=0.5)
+        _cimg(IMG / "eam_photo.png", "50%"),
+        _cap("GeSi EAM (imec)"),
+        _cimg(IMG / "eam-temperature.png", "70%"),
+        _cap("D. Feng et al. (Kotura), JSTQE, 2013."),
+    ], gap=0.3)
 
     mo.vstack([
-        mo.md("## Silicon Photonics \u2014 Modulator Options"),
+        mo.md("## Silicon Photonics "),
         mo.hstack([_col_mzm, _col_mrm, _col_eam], justify="space-around", align="start", gap=1.5),
     ])
     return
@@ -577,7 +693,7 @@ def _(mo, pd):
         mo.md("## 1.6 Tbps per Fiber \u2014 Configuration Options"),
         mo.md("### Spectrally wide-and-parallel vs. High-speed serial \u2014 all achieve 1.6 Tbps/fiber:"),
         mo.as_html(config_df),
-        mo.md("*EAMs and MZMs need laser fibers per wavelength \u2192 lower bandwidth density than MRMs.*"),
+        mo.md("Note: EAMs and MZMs need laser fibers per wavelength \u2192 lower bandwidth density than MRMs."),
     ])
     return
 
@@ -912,20 +1028,31 @@ def _(IMG, mo):
     | **Lightmatter** | 16λ × 112G PAM4 | **1.8 Tbps** | 2026 |
 
     Demonstrated: **MRM 16λ × 112G → 1.6 Tbps per fiber**""")
-    _imgs = mo.hstack([
-        mo.vstack([
-            mo.image(src=IMG / "intel_oci_system.png", width="80%", caption="Intel OCI — 8λ integrated lasers (OFC 2024)"),
-            mo.image(src=IMG / "intel_eye_margin.png", width="80%", caption="Intel 8λ × 32G NRZ eye margins"),
-        ], gap=0.5),
-        mo.vstack([
-            mo.image(src=IMG / "ayar_testboard.png", width="80%", caption="Ayar Labs TeraPHY 16λ test setup (OFC 2025)"),
-            mo.image(src=IMG / "ayar_ber_attenuation.png", width="80%", caption="Ayar Labs BER vs. attenuation"),
-        ], gap=0.5),
-        mo.vstack([
-            mo.image(src=IMG / "nvidia_board_link.png", width="80%", caption="NVIDIA Research board-to-board (ISSCC 2026)"),
-            mo.image(src=IMG / "lightmatter_eyes_ber.png", width="90%", caption="Lightmatter 16λ × 112G PAM4 eyes & BER"),
-        ], gap=0.5),
-    ], justify="space-around", align="start", gap=1)
+    def _cimg(src, width):
+        return mo.hstack([mo.image(src=src, width=width)], justify="center")
+
+    def _cap(text):
+        return mo.hstack([mo.md(f'<span style="font-size:14px; color:#555">{text}</span>')], justify="center")
+
+    _col_32g = mo.vstack([
+        mo.md("### 32G NRZ demos"),
+        _cimg(IMG / "intel_oci_system.png", "90%"),
+        _cap("Intel 8λ × 32G NRZ, integrated lasers (OFC 2024)"),
+        _cimg(IMG / "ayar_testboard.png", "90%"),
+        _cap("Ayar Labs TeraPHY 16λ × 32G NRZ (OFC 2025)"),
+        _cimg(IMG / "nvidia_board_link.png", "90%"),
+        _cap("NVIDIA Research 8λ × 32G NRZ (ISSCC 2026)"),
+    ], gap=0.3)
+
+    _col_hbr = mo.vstack([
+        mo.md("### 56G / 112G demos"),
+        _cimg(IMG / "lightmatter-bidi.png", "90%"),
+        _cap("Lightmatter 16λ × 56G NRZ bi-dir (OFC 2026)"),
+        _cimg(IMG / "lightmatter-100g.png", "90%"),
+        _cap("Lightmatter 16λ × 112G PAM4 (2026)"),
+    ], gap=0.3)
+
+    _imgs = mo.hstack([_col_32g, _col_hbr], justify="space-around", align="start", gap=1.5)
     mo.vstack([mo.md("## MRM WDM Link Examples"), _table, _imgs])
     return
 
@@ -1000,44 +1127,6 @@ def _(
                 _warn,
             ]),
         ], justify="space-around", widths=[0.5, 0.5]),
-    ])
-    return
-
-
-@app.cell(hide_code=True)
-def _(IMG, mo):
-    _col1 = mo.vstack([
-        mo.md("""### Intrinsic Si PN junction bandwidth
-    - Nyquist: **100\u2013112 GHz**
-    - C = 0.5\u20131 pF/mm
-    - R = 1\u20132 \u03a9\u00b7mm
-    - f\u2083dB = 1/(2\u03c0RC)
-    """),
-        mo.md('<div style="background:#E8F5E9; border-left:4px solid #2E7D32; padding:8px 14px; font-size:19px; border-radius:4px;">\u21d2 <b>80\u2013300 GHz</b> \u2705 Si fundamentally supports 448G</div><br><br>'),
-        mo.md('<div style="font-size:16px; padding:4px 0;"><b>Beyond Si:</b> Thin-film LiNbO\u2083, EO polymers, BaTiO\u2083, ferroelectric liquid crystals, III-V</div>'),
-    ])
-
-    _col2 = mo.vstack([
-        mo.md("""### Mach-Zehnder Modulators
-    - BW of CPW electrodes typically limited by RF loss
-    - Segmented electrodes"""),
-        mo.md("**Aloe Semiconductor** \u2014 180 Gbaud"),
-        mo.image(src=IMG / "aloe_180gbaud.png", width="90%", caption="Aloe Semiconductor \u2014 180 Gbaud MZM"),
-        mo.image(src=IMG / "aloe_eye.png", width="90%", caption="180 Gbaud eye diagram"),
-    ], gap=0.5)
-
-    _col3 = mo.vstack([
-        mo.md("""### Microring Modulators
-    - Conventional MRM: challenging (Q \u2272 1000)
-    - Coupling-modulated microring?"""),
-        mo.md("**Coupling modulation** \u2014 Sacher et al., Opt. Express, 2013"),
-        mo.image(src=IMG / "coupling_mod_mrm.jpeg", width="80%", caption="MZI PN phase-shifters in coupler"),
-        mo.image(src=IMG / "coupling_mod_response.jpeg", width="90%", caption="Coupling mod (black) vs. intracavity (blue, red)"),
-        ], gap=0.5)
-
-    mo.vstack([
-        mo.md("## Toward 400\u2013448G PAM4 per Lane"),
-        mo.hstack([_col1, _col2, _col3], justify="space-around", align="start", gap=1.5),
     ])
     return
 
