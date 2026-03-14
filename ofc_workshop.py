@@ -169,12 +169,12 @@ def _():
         return result
 
     OPTICS_CONFIGS = {
-        "mrm_16x100g_nrz":  {"label": "MRM 16\u03bb\u00d7100G NRZ",  "n_lam": 16, "rate": 100, "pjb": 3.89, "fibers_per_dir": 1},
-        "mrm_16x100g_pam4": {"label": "MRM 16\u03bb\u00d7100G PAM4", "n_lam": 16, "rate": 100, "pjb": 3.68, "fibers_per_dir": 1},
-        "mrm_32x50g_nrz":   {"label": "MRM 32\u03bb\u00d750G NRZ",   "n_lam": 32, "rate": 50,  "pjb": 3.58, "fibers_per_dir": 1},
-        "mrm_8x200g_pam4":  {"label": "MRM 8\u03bb\u00d7200G PAM4",  "n_lam": 8,  "rate": 200, "pjb": 4.61, "fibers_per_dir": 1},
-        "eam_16x100g_pam4": {"label": "EAM 16\u03bb\u00d7100G PAM4", "n_lam": 16, "rate": 100, "pjb": 4.44, "fibers_per_dir": 2},
-        "eam_8x200g_pam4":  {"label": "EAM 8\u03bb\u00d7200G PAM4",  "n_lam": 8,  "rate": 200, "pjb": 5.14, "fibers_per_dir": 2},
+        "mrm_16x100g_nrz":  {"label": "MRM 16\u03bb\u00d7100G NRZ",  "n_lam": 16, "rate": 100, "fibers_per_dir": 1},
+        "mrm_16x100g_pam4": {"label": "MRM 16\u03bb\u00d7100G PAM4", "n_lam": 16, "rate": 100, "fibers_per_dir": 1},
+        "mrm_32x50g_nrz":   {"label": "MRM 32\u03bb\u00d750G NRZ",   "n_lam": 32, "rate": 50,  "fibers_per_dir": 1},
+        "mrm_8x200g_pam4":  {"label": "MRM 8\u03bb\u00d7200G PAM4",  "n_lam": 8,  "rate": 200, "fibers_per_dir": 1},
+        "eam_16x100g_pam4": {"label": "EAM 16\u03bb\u00d7100G PAM4", "n_lam": 16, "rate": 100, "fibers_per_dir": 2},
+        "eam_8x200g_pam4":  {"label": "EAM 8\u03bb\u00d7200G PAM4",  "n_lam": 8,  "rate": 200, "fibers_per_dir": 2},
     }
 
     PLOT_FONT = dict(family="Open Sans, Noto Sans, Roboto, sans-serif", size=16, color="#263238")
@@ -227,7 +227,7 @@ def _(IMG, mo):
     _left = mo.vstack([
         mo.md("""### Example: NVIDIA GB200 NVL72
     - 72 GPUs + 36 CPUs, ~130 kW per rack
-    - BW per GPU: 7.8 Tbps (uni-dir)
+    - BW per GPU: 7.2 Tbps (uni-dir)
     - ~1300 copper cables, 5184 lanes per rack"""),
         mo.md("""### Important metrics:
     - Bandwidth density
@@ -829,11 +829,11 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     laser_wpe = mo.ui.slider(start=0.05, stop=0.25, step=0.01, value=0.12, label="Laser WPE")
-    mrm_tuning_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=20.0, label="MRM tuning (mW/\u03bb)")
-    demux_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=20.0, label="\u03bb-DEMUX (mW/\u03bb)")
-    eam_tuning_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=10.0, label="EAM tuning (mW/λ)")
+    mrm_tuning_power = mo.ui.slider(start=5.0, stop=30.0, step=1.0, value=20.0, label="MRM tuning (mW/\u03bb)")
+    demux_power = mo.ui.slider(start=5.0, stop=30.0, step=1.0, value=20.0, label="\u03bb-(DE)MUX (mW/\u03bb)")
+    eam_tuning_power = mo.ui.slider(start=5.0, stop=30.0, step=1.0, value=10.0, label="EAM tuning (mW/λ)")
     pam4_overhead = mo.ui.slider(start=0.0, stop=0.50, step=0.05, value=0.10, label="PAM4 SerDes overhead")
-    eic_ref_pjb = mo.ui.slider(start=0.5, stop=5.0, step=0.25, value=2.0, label="EIC SerDes ref (pJ/b @ 50G NRZ)")
+    eic_ref_pjb = mo.ui.slider(start=0.5, stop=5.0, step=0.2, value=2.0, label="EIC SerDes ref (pJ/b @ 50G NRZ)")
     return (
         demux_power,
         eam_tuning_power,
@@ -864,7 +864,7 @@ def _(
     _mrm_tune = mrm_tuning_power.value
     _eam_tune = eam_tuning_power.value
     _demux_mw = demux_power.value
-    _c_eam_mux = ENERGY_CONFIGS[4]["eam_mux"]  # EAM λ-MUX from config (mW/λ)
+    _eam_mux_mw = _demux_mw  # EAM λ-MUX = λ-DEMUX (same thermal tuner)
     _pam4_ovh = pam4_overhead.value
     _eic_ref = eic_ref_pjb.value
 
@@ -872,7 +872,7 @@ def _(
     for _c in ENERGY_CONFIGS:
         _req = _c["total_loss_dB"] + _c["tdecq"] + _c["rx_sens"]
         _laser_mW = 10 ** (_req / 10) / _wpe
-        _pic_per_lam = (_mrm_tune + _demux_mw) if _c["mod"] == "MRM" else (_eam_tune + _c["eam_mux"] + _demux_mw)
+        _pic_per_lam = (_mrm_tune + _demux_mw) if _c["mod"] == "MRM" else (_eam_tune + _eam_mux_mw + _demux_mw)
         _pic_pjb = _pic_per_lam / _c["rate"]
         _laser_pjb = _laser_mW / _c["rate"]
         _opt_pjb = _pic_pjb + _laser_pjb
@@ -933,9 +933,9 @@ def _(
     _tuning_table = mo.md(f"""| Component | MRM | EAM |
     |:----------|:---:|:---:|
     | Mod. tuning | {_mrm_tune:.0f} mW/λ | {_eam_tune:.0f} mW/λ |
-    | λ-MUX | — | {_c_eam_mux:.0f} mW/λ |
+    | λ-MUX | — | {_eam_mux_mw:.0f} mW/λ |
     | λ-DEMUX | {_demux_mw:.0f} mW/λ | {_demux_mw:.0f} mW/λ |
-    | **Total PIC thermal** | **{_mrm_tune + _demux_mw:.0f} mW/λ** | **{_eam_tune + _c_eam_mux + _demux_mw:.0f} mW/λ** |""")
+    | **Total PIC thermal** | **{_mrm_tune + _demux_mw:.0f} mW/λ** | **{_eam_tune + _eam_mux_mw + _demux_mw:.0f} mW/λ** |""")
 
     _power_table = mo.md(f"""| Config | PIC | Laser | Optical | EIC+XSR | **Total** | **1.6T (W)** |
     |:-------|:---:|:-----:|:-------:|:-------:|:---------:|:-----:|
@@ -945,6 +945,8 @@ def _(
 
     _right = mo.vstack([mo.accordion({"PIC thermal tuning breakdown": _tuning_table}), _power_table, _footer])
 
+    computed_pjb = {_r["label"]: _r["total_pjb"] for _r in _results}
+
     mo.vstack([
         mo.md("## Energy Efficiency Calculator"),
         mo.hstack([laser_wpe, mrm_tuning_power, eam_tuning_power, demux_power], justify="start", gap=1),
@@ -952,7 +954,7 @@ def _(
         mo.hstack([mo.as_html(_fig), _right], widths=[0.5, 0.5], align="start"),
         mo.md("---"),
     ])
-    return
+    return (computed_pjb,)
 
 
 @app.cell(hide_code=True)
@@ -1128,6 +1130,7 @@ def _(mo):
 def _(
     OPTICS_CONFIGS,
     RACKS,
+    computed_pjb,
     math,
     mo,
     optics_config,
@@ -1136,6 +1139,7 @@ def _(
 ):
     _rk = RACKS[rack_select.value]
     _op = OPTICS_CONFIGS[optics_config.value]
+    _pjb = computed_pjb[_op["label"]]
 
     _bw_bi = _rk["gpus"] * _rk["bw_per_gpu_tbps"] * 2
     _bw_fib = _op["n_lam"] * _op["rate"] / 1000
@@ -1144,9 +1148,8 @@ def _(
     _total_lanes = int(_bw_bi * 1000 / _op["rate"])
     _total_engines = _fibers_uni * 2
 
-    _io_W = _op["pjb"] * _bw_bi * pjb_overhead.value
+    _io_W = _pjb * _bw_bi * pjb_overhead.value
     _pct = _io_W / (_rk["rack_power_kw"] * 1000) * 100
-
 
     _metric_table = mo.md(f"""| Metric | Value |
     |:-------|------:|
@@ -1159,7 +1162,7 @@ def _(
 
     _power_table = mo.md(f"""| Power | Value |
     |:------|------:|
-    | Energy/bit | {_op['pjb']:.2f} pJ/b |
+    | Energy/bit | {_pjb:.2f} pJ/b |
     | IO power ({pjb_overhead.value:.1f}\u00d7) | **{_io_W:,.0f} W** |
     | Rack budget | {_rk['rack_power_kw']} kW |
     | **% for IO** | **{_pct:.1f}%** |""")
@@ -1183,7 +1186,7 @@ def _(mo):
     - AI compute clusters require ~O(10<sup>4</sup>) Tbps-class interconnects per rack
     - Huge opportunity and supply chain challenge
     - Key metrics: bandwidth density, power consumption, latency
-    - Critical for depolyment: Reliability, link stability
+    - Critical for deployment: Reliability, link stability
 
     ### Co-packaged optics for 1.6 Tbps/fiber and beyond
     - WDM + 100+G lane rate → bandwidth density with 16λ laser arrays
