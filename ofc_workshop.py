@@ -14,7 +14,6 @@ __generated_with = "0.20.4"
 app = marimo.App(
     width="full",
     app_title="Energy-Efficient, Bandwidth-Dense Co-Packaged Optics for AI Scale-Up",
-    layout_file="layouts/ofc_workshop.slides.json",
     css_file="layouts/ofc_workshop.css",
     html_head_file="layouts/head.html",
 )
@@ -192,7 +191,6 @@ def _():
         RX_SENS,
         TDECQ,
         TX_PENALTY,
-        WDM_DEMUX,
         eic_xsr_pjb,
         go,
         latency_for,
@@ -257,7 +255,7 @@ def _(IMG, mo):
 
 
 @app.cell(hide_code=True)
-def _(IMG, PLOT_FONT, PLOT_TITLE_FONT, RACKS, go, mo):
+def _(IMG, PLOT_FONT, RACKS, go, mo):
     fig_gpu = go.Figure(
         data=[go.Bar(
             x=[RACKS[k]["year"] for k in ["nvl72", "nvl144", "nvl576"]],
@@ -269,7 +267,6 @@ def _(IMG, PLOT_FONT, PLOT_TITLE_FONT, RACKS, go, mo):
         )]
     )
     fig_gpu.update_layout(
-        title=dict(text="GPUs per Rack", font=PLOT_TITLE_FONT),
         xaxis_title="Year", yaxis_title="GPUs per Rack", yaxis_range=[0, 700],
         xaxis=dict(tickmode="array", tickvals=[2025, 2026, 2027]),
         template="plotly_white", height=500, font=PLOT_FONT,
@@ -284,7 +281,7 @@ def _(IMG, PLOT_FONT, PLOT_TITLE_FONT, RACKS, go, mo):
             mo.image(src=IMG / "rubin_nvl576.jpeg", width="100%", caption="Rubin Ultra NVL576 (2H 2027)"),
         ], gap=1),
     ], justify="space-around", align="center", gap=2, widths=[0.7, 0.3])
-    mo.vstack([mo.md("## GPU Growth per Rack"), _layout, mo.md("---")])
+    mo.vstack([mo.md("## Number of GPUs per Rack"), _layout, mo.md("---")])
     return
 
 
@@ -510,11 +507,11 @@ def _(IMG, mo):
     - 1049k port device hours is equivalent to 
       - 1 Pod [(18 ports x 72 GPU)<sub>GPU</sub> + (18 x 72)<sub>switch</sub> x 8 racks] = **50.6 hours**
       - 16 Pods: **3 hours** 
-    - Temperature in compute tray likely higher than switch"""),
+    - Temperature in compute tray >  40<sup>o</sup>C"""),
     ])
     _right = mo.vstack([
-        mo.image(src=IMG / "huawei_failure_pie.png", width="90%", caption='Compute-node failure sources (<a href="https://www-file.huawei.com/admin/asset/v1/pro/view/e3026ae9d7b946e1b713079865da766b.pdf">Huawei 2024</a>)'),
-        mo.image(src=IMG / "meta_fec_boxplot.png", width="80%", caption="Amiralizedeh et al., ECOC 2025."),
+        mo.image(src=IMG / "huawei_failure_pie2.png", width="90%", caption='Compute-node failure sources (<a href="https://www-file.huawei.com/admin/asset/v1/pro/view/e3026ae9d7b946e1b713079865da766b.pdf">Huawei 2024</a>)'),
+        mo.image(src=IMG / "meta_fec_boxplot.png", width="75%", caption="Amiralizedeh et al., ECOC 2025."),
     ], gap=1)
     _layout = mo.hstack([_left, _right], align="start", gap=2, widths=[0.4, 0.6])
     mo.vstack([mo.md("## Why Not Optics? "), _layout, mo.md("---")])
@@ -636,9 +633,11 @@ def _(IMG, mo):
         _imgs1,
         mo.md("""- UCIe-2.5D interface density: **1-10 Tbps/mm** 
         - 10 Tbps/mm \u21d2 **~1.3 Tbps/fiber** @ 127 \u03bcm fiber pitch
-        - 3D integration \u21d2  Compact transceivers (\u2272 55 \u03bcm \u00d7 55 \u03bcm)"""),
-        mo.accordion({"Spatially wide-and-parallel links (side note)": mo.hstack([
-            mo.md("""- 10 Tbps/mm \u2192 10 Tbps/mm\u00b2 \u21d2 **100 Gbps / (100 \u03bcm)\u00b2**
+        - 3D integration \u21d2  Compact transceivers (\u2272 55 \u03bcm \u00d7 55 \u03bcm)
+        - External lasers for serviceability"""),
+        mo.accordion({"Spatially wide-and-parallel links ": mo.hstack([
+            mo.md(""" - VCSELs and microLEDs
+    - 10 Tbps/mm \u2192 10 Tbps/mm\u00b2 \u21d2 **100 Gbps / (100 \u03bcm)\u00b2**
     - Multi-core fiber and imaging fiber bundles
         - Manage inter-core crosstalk
         - Multimode emission \u21d2 coupling loss to single-mode cores
@@ -731,10 +730,22 @@ def _(mo):
         options=["32\u03bb \u00d7 50G NRZ", "16\u03bb \u00d7 100G NRZ", "16\u03bb \u00d7 100G PAM4", "8\u03bb \u00d7 200G PAM4"],
         value="16\u03bb \u00d7 100G PAM4", label="Configuration",
     )
-    coupling_loss = mo.ui.slider(start=1.0, stop=5.0, step=0.5, value=2.5, label="Fiber coupling (dB)")
-    routing_loss = mo.ui.slider(start=0.0, stop=2.0, step=0.5, value=0.5, label="Routing loss (dB)")
-    channel_loss = mo.ui.slider(start=0.0, stop=6.0, step=0.5, value=3.0, label="Channel loss (dB)")
-    return channel_loss, config_select, coupling_loss, mod_type, routing_loss
+    coupling_loss = mo.ui.slider(start=1.0, stop=5.0, step=0.1, value=2.5, label="Fiber coupling (dB)")
+    routing_loss = mo.ui.slider(start=0.0, stop=2.0, step=0.1, value=0.5, label="Routing loss (dB)")
+    channel_loss = mo.ui.slider(start=0.0, stop=6.0, step=0.1, value=3.0, label="Channel loss (dB)")
+    mrm_bus_loss = mo.ui.slider(start=0.0, stop=3.0, step=0.1, value=1.0, label="MRM bus excess loss (dB)")
+    mrm_demux_loss = mo.ui.slider(start=0.0, stop=3.0, step=0.1, value=2.0, label="MRM \u03bb-DEMUX loss (dB)")
+    eam_wdm_loss = mo.ui.slider(start=0.0, stop=3.0, step=0.1, value=2, label="EAM \u03bb-(DE)MUX loss (dB)")
+    return (
+        channel_loss,
+        config_select,
+        coupling_loss,
+        eam_wdm_loss,
+        mod_type,
+        mrm_bus_loss,
+        mrm_demux_loss,
+        routing_loss,
+    )
 
 
 @app.cell(hide_code=True)
@@ -745,13 +756,15 @@ def _(
     RX_SENS,
     TDECQ,
     TX_PENALTY,
-    WDM_DEMUX,
     channel_loss,
     config_select,
     coupling_loss,
+    eam_wdm_loss,
     go,
     mo,
     mod_type,
+    mrm_bus_loss,
+    mrm_demux_loss,
     routing_loss,
 ):
     _cfg = config_select.value
@@ -762,15 +775,24 @@ def _(
 
     _rel_oma = TX_PENALTY.get((_mod, _rate, _fmt), 4.0)
     _tdecq = TDECQ.get((_mod, _rate, _fmt), 1.5)
-    _wdm_mux = 2.0
-    _wdm_demux = WDM_DEMUX.get(_n_lam, 1.0)
     _rx_sens = RX_SENS.get((_rate, _fmt), -10.0)
+
+    if _mod == "EAM":
+        _wdm_mux = eam_wdm_loss.value
+        _wdm_demux = eam_wdm_loss.value
+        _mux_label = "\u03bb-MUX"
+        _mux_note = f"EAM: \u03bb-MUX = \u03bb-DEMUX = {eam_wdm_loss.value:.1f} dB (locked)"
+    else:
+        _wdm_mux = mrm_bus_loss.value
+        _wdm_demux = mrm_demux_loss.value
+        _mux_label = "Bus excess"
+        _mux_note = f"MRM: bus excess loss = {mrm_bus_loss.value:.1f} dB, \u03bb-DEMUX = {mrm_demux_loss.value:.1f} dB (independent)"
 
     _losses = {
         "TX Coupling": coupling_loss.value, "TX Routing": routing_loss.value,
-        f"OMA ({_mod})": _rel_oma, "WDM MUX": _wdm_mux,
+        f"OMA ({_mod})": _rel_oma, _mux_label: _wdm_mux,
         "Out Coupling": coupling_loss.value, "Channel": channel_loss.value,
-        "In Coupling": coupling_loss.value, "WDM DEMUX": _wdm_demux,
+        "In Coupling": coupling_loss.value, "\u03bb-DEMUX": _wdm_demux,
         "RX Routing": routing_loss.value,
     }
     _total_loss = sum(_losses.values())
@@ -815,15 +837,19 @@ def _(
         hovertemplate="%{label}: %{value:.1f} dB (%{percent})<extra></extra>",
     ))
     _fig_pie.update_layout(
-        title=dict(text="Loss Breakdown", font=PLOT_TITLE_FONT),
+        title=dict(text="Loss & Penalty Breakdown", font=PLOT_TITLE_FONT),
         height=380, font=PLOT_FONT, showlegend=False,
     )
 
-    _diagram = mo.image(src=IMG / "link_budget_diagram.png", width="100%", caption="Laser \u2192 Coupler \u2192 Modulator \u2192 \u03bb-MUX \u2192 Routing \u2192 Channel \u2192 Coupler \u2192 Routing \u2192 \u03bb-DEMUX \u2192 Detector")
+    _diagram = mo.image(src=IMG / "link_budget_diagram.png", width="100%", caption="External laser \u2192 Coupler \u2192 Modulator \u2192 \u03bb-MUX \u2192 Routing \u2192 Channel \u2192 Coupler \u2192 Routing \u2192 \u03bb-DEMUX \u2192 Detector")
+
+    _mux_sliders = mo.hstack([mrm_bus_loss, mrm_demux_loss], justify="start", gap=1) if _mod == "MRM" else eam_wdm_loss
+
     mo.vstack([
-        mo.md("## Optical Link Budget Calculator"),
+        mo.md("## Optical Link Budget"),
         _diagram,
         mo.hstack([mod_type, config_select, coupling_loss, routing_loss, channel_loss], justify="start", gap=1),
+        mo.hstack([_mux_sliders, mo.md(_mux_note)], justify="start", align="center", gap=1),
         mo.hstack([
             mo.as_html(_fig),
             mo.vstack([
@@ -843,7 +869,7 @@ def _(mo):
     demux_power = mo.ui.slider(start=5.0, stop=30.0, step=1.0, value=20.0, label="\u03bb-(DE)MUX (mW/\u03bb)")
     eam_tuning_power = mo.ui.slider(start=5.0, stop=30.0, step=1.0, value=10.0, label="EAM tuning (mW/λ)")
     pam4_overhead = mo.ui.slider(start=0.0, stop=0.50, step=0.05, value=0.10, label="PAM4 SerDes overhead")
-    eic_ref_pjb = mo.ui.slider(start=0.5, stop=5.0, step=0.2, value=2.0, label="EIC SerDes ref (pJ/b @ 50G NRZ)")
+    eic_ref_pjb = mo.ui.slider(start=0.5, stop=6.0, step=0.2, value=3, label="EIC SerDes ref (pJ/b @ 50G NRZ)")
     return (
         demux_power,
         eam_tuning_power,
@@ -859,35 +885,53 @@ def _(
     ENERGY_CONFIGS,
     PLOT_FONT,
     PLOT_TITLE_FONT,
+    TX_PENALTY,
+    channel_loss,
+    coupling_loss,
     demux_power,
     eam_tuning_power,
+    eam_wdm_loss,
     eic_ref_pjb,
     eic_xsr_pjb,
     go,
     laser_wpe,
     mo,
+    mrm_bus_loss,
+    mrm_demux_loss,
     mrm_tuning_power,
     np,
     pam4_overhead,
+    routing_loss,
 ):
     _wpe = laser_wpe.value
     _mrm_tune = mrm_tuning_power.value
     _eam_tune = eam_tuning_power.value
     _demux_mw = demux_power.value
-    _eam_mux_mw = _demux_mw  # EAM λ-MUX = λ-DEMUX (same thermal tuner)
+    _eam_mux_mw = _demux_mw
     _pam4_ovh = pam4_overhead.value
     _eic_ref = eic_ref_pjb.value
 
     _results = []
     for _c in ENERGY_CONFIGS:
-        _req = _c["total_loss_dB"] + _c["tdecq"] + _c["rx_sens"]
-        _laser_mW = 10 ** (_req / 10) / _wpe
-        _pic_per_lam = (_mrm_tune + _demux_mw) if _c["mod"] == "MRM" else (_eam_tune + _eam_mux_mw + _demux_mw)
-        _pic_pjb = _pic_per_lam / _c["rate"]
-        _laser_pjb = _laser_mW / _c["rate"]
-        _opt_pjb = _pic_pjb + _laser_pjb
+        _mod = _c["mod"]
+        _rate = _c["rate"]
         _fmt = "PAM4" if "PAM4" in _c["label"] else "NRZ"
-        _eic = eic_xsr_pjb(_c["rate"], _fmt, _pam4_ovh, ref_pjb=_eic_ref)
+        _rel_oma = TX_PENALTY.get((_mod, _rate, _fmt), 4.0)
+        if _mod == "EAM":
+            _wdm_mux = eam_wdm_loss.value
+            _wdm_demux = eam_wdm_loss.value
+        else:
+            _wdm_mux = mrm_bus_loss.value
+            _wdm_demux = mrm_demux_loss.value
+        _total_loss = (3 * coupling_loss.value + 2 * routing_loss.value
+                       + _rel_oma + _wdm_mux + channel_loss.value + _wdm_demux)
+        _req = _total_loss + _c["tdecq"] + _c["rx_sens"]
+        _laser_mW = 10 ** (_req / 10) / _wpe
+        _pic_per_lam = (_mrm_tune + _demux_mw) if _mod == "MRM" else (_eam_tune + _eam_mux_mw + _demux_mw)
+        _pic_pjb = _pic_per_lam / _rate
+        _laser_pjb = _laser_mW / _rate
+        _opt_pjb = _pic_pjb + _laser_pjb
+        _eic = eic_xsr_pjb(_rate, _fmt, _pam4_ovh, ref_pjb=_eic_ref)
         _tot_pjb = _opt_pjb + _eic
         _results.append({"label": _c["label"], "pic_pjb": _pic_pjb, "laser_pjb": _laser_pjb,
                          "optical_pjb": _opt_pjb, "eic_pjb": _eic,
@@ -958,7 +1002,7 @@ def _(
     computed_pjb = {_r["label"]: _r["total_pjb"] for _r in _results}
 
     mo.vstack([
-        mo.md("## Energy Efficiency Calculator"),
+        mo.md("## Energy Efficiency "),
         mo.hstack([laser_wpe, mrm_tuning_power, eam_tuning_power, demux_power], justify="start", gap=1),
         mo.hstack([pam4_overhead, eic_ref_pjb], justify="start", gap=1),
         mo.hstack([mo.as_html(_fig), _right], widths=[0.5, 0.5], align="start"),
@@ -1136,7 +1180,7 @@ def _(IMG, mo):
     - Single-chip integrated
     - 16\u03bb \u00d7 200 GHz, 32 fiber output
     - 100 mW per \u03bb"""),
-        _cimg(IMG / "Lightmatter-laser.png", "90%"),
+        _cimg(IMG / "lightmatter-laser.png", "90%"),
     ], gap=0.3)
 
     _col_xscape = mo.vstack([
@@ -1228,19 +1272,20 @@ def _(IMG, mo):
     ## Summary
 
     ### System requirements on scale-up networks
-    - AI compute clusters require ~O(10<sup>4</sup>) Tbps-class interconnects per rack
-    - Huge opportunity and supply chain challenge
+    - AI compute clusters require ~O(10<sup>4</sup>) Tbps-class interconnects per rack \u2192 Commercial opportunity and supply chain challenge
     - Key metrics: bandwidth density, power consumption, latency
-    - Critical for deployment: Reliability, link stability
+    - Critical: Reliability, link stability
 
     ### Co-packaged optics for 1.6 Tbps/fiber and beyond
-    - WDM + 100+G lane rate \u2192 bandwidth density with 16\u03bb laser arrays
-    - NRZ for lowest latency
-    - State of the art: MRM 16\u03bb \u00d7 112G-PAM4 \u2192 **1.6 Tbps per fiber**
+    - External lasers for serviceability and reliability
+    - WDM & 100+G lane rate achieves bandwidth density with 16\u03bb laser arrays
+        - NRZ for the lowest latency
+        - State of the art: MRM 16\u03bb \u00d7 112G-PAM4 
 
     ### Major opportunities
     - Components: fiber-to-chip couplers, efficient modulators, reliable lasers
     - Links: Telemetry, redundancy, network management for error-free operation
+
     """)
 
     _verified = mo.hstack([
