@@ -691,7 +691,7 @@ def _(IMG, mo):
     - Bulk GeSi: operates near 1550 nm
     - Bandgap shift d\u03bb/dT = 0.8 nm/K
     - Thermal stabilization to **~5 K**"""),
-        _cimg(IMG / "eam_photo.png", "50%"),
+        _cimg(IMG / "imec-eam.jpeg", "90%"),
         _cap("GeSi EAM (imec)"),
         _cimg(IMG / "eam-temperature.png", "70%"),
         _cap("D. Feng et al. (Kotura), JSTQE, 2013."),
@@ -1087,20 +1087,20 @@ def _(IMG, mo):
 
     _col_32g = mo.vstack([
         mo.md("### 32G NRZ x  8λ or 16λ"),
-        _cimg(IMG / "intel_oci_system.png", "90%"),
+        _cimg(IMG / "intel_oci_system.png", "75%"),
         _cap("Intel 8λ × 32G NRZ, integrated lasers (OFC 2024)"),
-        _cimg(IMG / "ayar_testboard.png", "90%"),
+        _cimg(IMG / "ayar_testboard.png", "80%"),
         _cap("Ayar Labs TeraPHY 16λ × 32G NRZ (OFC 2025)"),
-        _cimg(IMG / "nvidia_board_link.png", "80%"),
+        _cimg(IMG / "nvidia_board_link.png", "50%"),
         _cap("NVIDIA Research 8λ × 32G NRZ (ISSCC 2026)"),
     ], gap=0.3)
 
     _col_hbr = mo.vstack([
         mo.md("### 56G NRZ x 16λ"),
-        _cimg(IMG / "lightmatter-bidi.png", "90%"),
+        _cimg(IMG / "lightmatter-bidi.png", "80%"),
         _cap("Lightmatter 16λ × 56G NRZ bi-dir (OFC 2026)"),
         mo.md("### 112G PAM4 x 16λ"),
-        _cimg(IMG / "lightmatter-100g.png", "80%"),
+        _cimg(IMG / "lightmatter-100g.png", "65%"),
         _cap("Lightmatter 16λ × 112G PAM4 (2026)"),
     ], gap=0.3)
 
@@ -1245,7 +1245,7 @@ def _(IMG, mo):
 
     _verified = mo.hstack([
         mo.md('<span style="font-size: 1em; opacity: 0.8;">Notebook verified by</span>'),
-        mo.image(src=IMG / "axiomatic-logo.png", height=32),
+        mo.image(src=IMG / "axiomatic-logo.png", height=40),
     ], justify="end", align="center", gap=0.4)
 
     mo.vstack([_summary, _verified])
