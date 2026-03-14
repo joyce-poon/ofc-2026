@@ -14,6 +14,7 @@ __generated_with = "0.20.4"
 app = marimo.App(
     width="full",
     app_title="Energy-Efficient, Bandwidth-Dense Co-Packaged Optics for AI Scale-Up",
+    layout_file="layouts/ofc_workshop.slides.json",
     css_file="layouts/ofc_workshop.css",
     html_head_file="layouts/head.html",
 )
@@ -209,14 +210,23 @@ def _(IMG, mo):
         mo.hstack([
             mo.md("""# Energy-Efficient, Bandwidth-Dense Co-Packaged Optics for AI Scale-Up
 
-    ###Joyce Poon
+    <div style = "font-size: 2em; color:#00838F">Joyce Poon</div>
 
-    ####OFC Workshop: Chasing the Limit | March 15, 2026
+    <div style = "font-size: 1.5em">University of Toronto</div>
+    <br>
 
-    _Views expressed are my own and do not represent those of my former employer or any other organization._"""),
+    <div style = "font-size: 1.4em">https://joyce-poon.github.io/ofc-2026/ </div>
+
+
+    <br><br><br>
+
+    <div style = "font-size: 1.3em"><b>OFC Workshop: Chasing the Limit</b> | March 15, 2026
+    <br><br>
+
+    Views expressed are my own and do not represent those of my former employer or any other organization. </div>"""),
             mo.image(src=IMG / "qrcode_joyce-poon.github.io.png", width="150px"),
             mo.image(src=IMG / "uoft_logo.png", width="200px"),
-        ], align="center", widths=[0.7, 0.15, 0.15]),
+        ], align="center", widths=[0.6, 0.2, 0.2]),
         mo.md("---"),
     ])
     return
@@ -1081,7 +1091,7 @@ def _(IMG, mo):
         _cap("Intel 8λ × 32G NRZ, integrated lasers (OFC 2024)"),
         _cimg(IMG / "ayar_testboard.png", "90%"),
         _cap("Ayar Labs TeraPHY 16λ × 32G NRZ (OFC 2025)"),
-        _cimg(IMG / "nvidia_board_link.png", "90%"),
+        _cimg(IMG / "nvidia_board_link.png", "80%"),
         _cap("NVIDIA Research 8λ × 32G NRZ (ISSCC 2026)"),
     ], gap=0.3)
 
@@ -1090,7 +1100,7 @@ def _(IMG, mo):
         _cimg(IMG / "lightmatter-bidi.png", "90%"),
         _cap("Lightmatter 16λ × 56G NRZ bi-dir (OFC 2026)"),
         mo.md("### 112G PAM4 x 16λ"),
-        _cimg(IMG / "lightmatter-100g.png", "90%"),
+        _cimg(IMG / "lightmatter-100g.png", "80%"),
         _cap("Lightmatter 16λ × 112G PAM4 (2026)"),
     ], gap=0.3)
 
@@ -1101,9 +1111,44 @@ def _(IMG, mo):
 
 @app.cell(hide_code=True)
 def _(IMG, mo):
+    def _cimg(src, width):
+        return mo.hstack([mo.image(src=src, width=width)], justify="center")
+
+    def _cap(text):
+        return mo.hstack([mo.md(f'<span style="font-size:16px; color:#555">{text}</span>')], justify="center")
+
+    _col_ayar = mo.vstack([
+        mo.md("""### Ayar Labs with Sivers
+- Monolithic InP DFB array
+- 16\u03bb \u00d7 200 GHz"""),
+        _cimg(IMG / "ayar-laser.png", "90%"),
+    ], gap=0.3)
+
+    _col_scintil = mo.vstack([
+        mo.md("""### Scintil Photonics
+- Hybrid InP-on-Si
+- 16\u03bb \u00d7 (100 or 200 GHz)"""),
+        _cimg(IMG / "scintil-laser.png", "90%"),
+    ], gap=0.3)
+
+    _col_lm = mo.vstack([
+        mo.md("""### Lightmatter
+- Single-chip integrated
+- 16\u03bb \u00d7 200 GHz, 32 fiber output
+- 100 mW per \u03bb"""),
+        _cimg(IMG / "Lightmatter-laser.png", "90%"),
+    ], gap=0.3)
+
+    _col_xscape = mo.vstack([
+        mo.md("""### XScape Photonics
+- Comb laser
+- Up to 16\u03bb \u00d7 200 GHz"""),
+        _cimg(IMG / "xscape-laser.jpg", "90%"),
+    ], gap=0.3)
+
     mo.vstack([
         mo.md("## DWDM Laser Source Examples"),
-        mo.image(src=IMG / "dwdm_laser_sources.png", width="100%"),
+        mo.hstack([_col_ayar, _col_scintil, _col_lm, _col_xscape], justify="space-around", align="start", gap=1.0),
         mo.md("---"),
     ])
     return
