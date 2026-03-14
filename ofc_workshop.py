@@ -211,11 +211,12 @@ def _(IMG, mo):
 
     ###Joyce Poon
 
-    OFC Workshop: Chasing the Limit | March 15, 2026
+    ####OFC Workshop: Chasing the Limit | March 15, 2026
 
     _Views expressed are my own and do not represent those of my former employer or any other organization._"""),
-            mo.image(src=IMG / "uoft_logo.png", width="180px"),
-        ], align="center", widths=[0.8, 0.2]),
+            mo.image(src=IMG / "qrcode_joyce-poon.github.io.png", width="150px"),
+            mo.image(src=IMG / "uoft_logo.png", width="200px"),
+        ], align="center", widths=[0.7, 0.15, 0.15]),
         mo.md("---"),
     ])
     return
@@ -241,7 +242,7 @@ def _(IMG, mo):
         mo.md('<div style="background:#FFF3E0; border-left:4px solid #E65100; padding:8px 14px; font-size:18px; border-radius:4px;"><b>Bandwidth density matters:</b> the solution needs to fit!</div>'),
     ])
     _layout = mo.hstack([_left, _right], align="start", gap=2)
-    mo.vstack([mo.md("## Scale-Up Interconnects"), _layout])
+    mo.vstack([mo.md("## Scale-Up Interconnects"), _layout, mo.md("---")])
     return
 
 
@@ -269,11 +270,11 @@ def _(IMG, PLOT_FONT, PLOT_TITLE_FONT, RACKS, go, mo):
     _layout = mo.hstack([
         mo.ui.plotly(fig_gpu),
         mo.vstack([
-            mo.image(src=IMG / "rubin_nvl144.jpeg", width="90%", caption="Vera Rubin NVL144 (2H 2026)"),
-            mo.image(src=IMG / "rubin_nvl576.jpeg", width="90%", caption="Rubin Ultra NVL576 (2H 2027)"),
+            mo.image(src=IMG / "rubin_nvl144.jpeg", width="100%", caption="Vera Rubin NVL144 (2H 2026)"),
+            mo.image(src=IMG / "rubin_nvl576.jpeg", width="100%", caption="Rubin Ultra NVL576 (2H 2027)"),
         ], gap=1),
     ], justify="space-around", align="center", gap=2, widths=[0.7, 0.3])
-    mo.vstack([mo.md("## GPU Growth per Rack"), _layout])
+    mo.vstack([mo.md("## GPU Growth per Rack"), _layout, mo.md("---")])
     return
 
 
@@ -369,6 +370,7 @@ def _(mo, pd):
     &emsp; BW/rack = GPUs \u00d7 BW/GPU \u00d7 2 (bidir) &emsp;|&emsp; VR NVL576: 1.5 PB/s (NVIDIA) = {1.5*8:.0f} Pbps
     IO power = pJ/b \u00d7 BW/rack &emsp;|&emsp; % Power = IO power \u00f7 rack power"""),
         mo.md('<div style="background:#FFF3E0; border-left:4px solid #E65100; padding:8px 14px; font-size:18px; border-radius:4px;">As GPUs per rack increases, IO could consume <b>20-40%</b> of rack power.</div>'),
+        mo.md("---"),
     ])
     return (GPU_SYSTEMS,)
 
@@ -460,6 +462,7 @@ def _(GPU_SYSTEMS, PLOT_FONT, go, io_pjb_slider, make_subplots, math, mo):
         mo.md("## System Comparison"),
         mo.hstack([io_pjb_slider], justify="start"),
         mo.as_html(fig_systems),
+        mo.md("---"),
     ])
     return
 
@@ -477,8 +480,9 @@ def _(IMG, mo):
     ])
     _right = mo.image(src=IMG / "packaging_approaches.png", caption="Pluggable \u2192 NPO \u2192 CPO \u2192 Optical Interposer")
     mo.vstack([
-        mo.md("## Optical Advantages"),
-        mo.hstack([_left, _right], align="center", gap=2, widths=[0.45, 0.55]),
+        mo.md("## Optics: The Promise"),
+        mo.hstack([_left, _right], align="center", gap=2, widths=[0.4, 0.6]),
+        mo.md("---"),
     ])
     return
 
@@ -503,7 +507,7 @@ def _(IMG, mo):
         mo.image(src=IMG / "meta_fec_boxplot.png", width="80%", caption="Amiralizedeh et al., ECOC 2025."),
     ], gap=1)
     _layout = mo.hstack([_left, _right], align="start", gap=2, widths=[0.4, 0.6])
-    mo.vstack([mo.md("## Why Not Optics? "), _layout])
+    mo.vstack([mo.md("## Why Not Optics? "), _layout, mo.md("---")])
     return
 
 
@@ -602,6 +606,7 @@ def _(
     """),
             mo.as_html(_fig),
         ], justify="space-around", align="center", widths=[0.35, 0.65]),
+        mo.md("---"),
     ])
     return
 
@@ -617,7 +622,7 @@ def _(IMG, mo):
         mo.image(src=IMG / "multicore_fiber.png", width="100%", caption="Custom MCF with Corning (Azadeh et al., 2022)"),
     ], justify="center", gap=2)
     mo.vstack([
-        mo.md("## Bandwidth Density \u2014 3D Integration"),
+        mo.md("## Bandwidth Density and 3D Integration"),
         _imgs1,
         mo.md("""- UCIe-2.5D interface density: **1-10 Tbps/mm** 
         - 10 Tbps/mm \u21d2 **~1.3 Tbps/fiber** @ 127 \u03bcm fiber pitch
@@ -632,6 +637,7 @@ def _(IMG, mo):
     Requires fiber technology and packaging development!"""),
             _imgs2,
         ], justify="space-around", align="center", widths=[0.45, 0.55])}),
+        mo.md("---"),
     ])
     return
 
@@ -684,6 +690,7 @@ def _(IMG, mo):
     mo.vstack([
         mo.md("## Silicon Photonics "),
         mo.hstack([_col_mzm, _col_mrm, _col_eam], justify="space-around", align="start", gap=1.5),
+        mo.md("---"),
     ])
     return
 
@@ -702,6 +709,7 @@ def _(mo, pd):
         mo.md("### Spectrally wide-and-parallel vs. High-speed serial \u2014 all achieve 1.6 Tbps/fiber:"),
         mo.as_html(config_df),
         mo.md("Note: EAMs and MZMs need laser fibers per wavelength \u2192 lower bandwidth density than MRMs."),
+        mo.md("---"),
     ])
     return
 
@@ -813,6 +821,7 @@ def _(
                 mo.md(f"Path loss **{_total_loss:.1f} dB** + TDECQ {_tdecq:.1f} dB + RX sens {_rx_sens:.1f} dBm = **Laser/{_n_lam}\u03bb: {_req_laser:.1f} dBm** ({10**(_req_laser/10):.1f} mW)"),
             ]),
         ], justify="space-around", align="center", widths=[0.55, 0.45]),
+        mo.md("---"),
     ])
     return
 
@@ -822,9 +831,17 @@ def _(mo):
     laser_wpe = mo.ui.slider(start=0.05, stop=0.25, step=0.01, value=0.12, label="Laser WPE")
     mrm_tuning_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=20.0, label="MRM tuning (mW/\u03bb)")
     demux_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=20.0, label="\u03bb-DEMUX (mW/\u03bb)")
+    eam_tuning_power = mo.ui.slider(start=5.0, stop=40.0, step=5.0, value=10.0, label="EAM tuning (mW/λ)")
     pam4_overhead = mo.ui.slider(start=0.0, stop=0.50, step=0.05, value=0.10, label="PAM4 SerDes overhead")
     eic_ref_pjb = mo.ui.slider(start=0.5, stop=5.0, step=0.25, value=2.0, label="EIC SerDes ref (pJ/b @ 50G NRZ)")
-    return demux_power, eic_ref_pjb, laser_wpe, mrm_tuning_power, pam4_overhead
+    return (
+        demux_power,
+        eam_tuning_power,
+        eic_ref_pjb,
+        laser_wpe,
+        mrm_tuning_power,
+        pam4_overhead,
+    )
 
 
 @app.cell(hide_code=True)
@@ -833,6 +850,7 @@ def _(
     PLOT_FONT,
     PLOT_TITLE_FONT,
     demux_power,
+    eam_tuning_power,
     eic_ref_pjb,
     eic_xsr_pjb,
     go,
@@ -844,7 +862,9 @@ def _(
 ):
     _wpe = laser_wpe.value
     _mrm_tune = mrm_tuning_power.value
+    _eam_tune = eam_tuning_power.value
     _demux_mw = demux_power.value
+    _c_eam_mux = ENERGY_CONFIGS[4]["eam_mux"]  # EAM λ-MUX from config (mW/λ)
     _pam4_ovh = pam4_overhead.value
     _eic_ref = eic_ref_pjb.value
 
@@ -852,7 +872,7 @@ def _(
     for _c in ENERGY_CONFIGS:
         _req = _c["total_loss_dB"] + _c["tdecq"] + _c["rx_sens"]
         _laser_mW = 10 ** (_req / 10) / _wpe
-        _pic_per_lam = (_mrm_tune + _demux_mw) if _c["mod"] == "MRM" else (10 + _c["eam_mux"] + _demux_mw)
+        _pic_per_lam = (_mrm_tune + _demux_mw) if _c["mod"] == "MRM" else (_eam_tune + _c["eam_mux"] + _demux_mw)
         _pic_pjb = _pic_per_lam / _c["rate"]
         _laser_pjb = _laser_mW / _c["rate"]
         _opt_pjb = _pic_pjb + _laser_pjb
@@ -901,7 +921,7 @@ def _(
     _fig.update_layout(
         title=dict(text="Optical vs. Electrical Power", font=PLOT_TITLE_FONT),
         xaxis_title="PIC + Laser (pJ/b)", yaxis_title="EIC + XSR SerDes (pJ/b)",
-        xaxis_range=[0, 5.5], yaxis_range=[0, 4.0],
+        xaxis_range=[0, 4.5], yaxis_range=[0, 4.0],
         template="plotly_white", height=480, font=PLOT_FONT, showlegend=False,
     )
 
@@ -910,23 +930,34 @@ def _(
         for _r in _results
     )
 
-    _table = mo.md(f"""| Config | PIC | Laser | Optical | EIC+XSR | **Total** | **1.6T (W)** |
-    |:-------|:---:|:-----:|:-------:|:-------:|:---------:|:-----:|
-    {_rows}
+    _tuning_table = mo.md(f"""| Component | MRM | EAM |
+    |:----------|:---:|:---:|
+    | Mod. tuning | {_mrm_tune:.0f} mW/λ | {_eam_tune:.0f} mW/λ |
+    | λ-MUX | — | {_c_eam_mux:.0f} mW/λ |
+    | λ-DEMUX | {_demux_mw:.0f} mW/λ | {_demux_mw:.0f} mW/λ |
+    | **Total PIC thermal** | **{_mrm_tune + _demux_mw:.0f} mW/λ** | **{_eam_tune + _c_eam_mux + _demux_mw:.0f} mW/λ** |""")
 
-    Laser is **50-90%** of optical pJ/b. WPE={_wpe*100:.0f}%. EIC ref={_eic_ref:.1f} pJ/b @ 50G NRZ.""")
+    _power_table = mo.md(f"""| Config | PIC | Laser | Optical | EIC+XSR | **Total** | **1.6T (W)** |
+    |:-------|:---:|:-----:|:-------:|:-------:|:---------:|:-----:|
+    {_rows}""")
+
+    _footer = mo.md(f"Laser is **50–90%** of optical pJ/b. WPE={_wpe*100:.0f}%. EIC ref={_eic_ref:.1f} pJ/b @ 50G NRZ.")
+
+    _right = mo.vstack([mo.accordion({"PIC thermal tuning breakdown": _tuning_table}), _power_table, _footer])
+
     mo.vstack([
         mo.md("## Energy Efficiency Calculator"),
-        mo.hstack([laser_wpe, mrm_tuning_power, demux_power], justify="start", gap=1),
+        mo.hstack([laser_wpe, mrm_tuning_power, eam_tuning_power, demux_power], justify="start", gap=1),
         mo.hstack([pam4_overhead, eic_ref_pjb], justify="start", gap=1),
-        mo.hstack([mo.as_html(_fig), _table], widths=[0.55, 0.45], align="start"),
+        mo.hstack([mo.as_html(_fig), _right], widths=[0.5, 0.5], align="start"),
+        mo.md("---"),
     ])
     return
 
 
 @app.cell(hide_code=True)
 def _(LAT_EXPONENTS_DEFAULT, mo):
-    fiber_length_m = mo.ui.slider(start=1, stop=500.0, step=5, value=5.0, label="Fiber length (m)")
+    fiber_length_m = mo.ui.slider(start=1, stop=100.0, step=1, value=5.0, label="Fiber length (m)")
     lat_exp_serdes = mo.ui.slider(start=0.3, stop=1.0, step=0.1, value=LAT_EXPONENTS_DEFAULT["Serializer"], label="\u03b1 Ser/Des/CDR")
     lat_exp_fec = mo.ui.slider(start=0.2, stop=1.0, step=0.1, value=LAT_EXPONENTS_DEFAULT["Lite FEC"], label="\u03b1 FEC")
     lat_exp_dac_adc = mo.ui.slider(start=0.3, stop=1.0, step=0.1, value=LAT_EXPONENTS_DEFAULT["DAC TX"], label="\u03b1 DAC/ADC")
@@ -1008,7 +1039,7 @@ def _(
         _nrz = "\u2014" if _k in ("Lite FEC", "DAC TX", "ADC RX") else "\u2713"
         _rows.append(f"| {_k} | {_ref:.1f} ns | {_at100:.1f} ns | {_a:.1f} | {_nrz} | \u2713 |")
     _rows.append(f"| Fiber ToF | {_tof_ns:.1f} ns | {_tof_ns:.1f} ns | \u2014 | \u2713 | \u2713 |")
-    _table_str = "| Component | @50 Gbd | @100 Gbd | \u03b1 | NRZ | PAM4 |\n|:----------|--------:|---------:|:--:|:---:|:----:|\n" + "\n".join(_rows)
+    _table_str = "| Component | 50 Gbd | 100 Gbd | \u03b1 | NRZ | PAM4 |\n|:----------|:--------:|:---------:|:--:|:---:|:----:|\n" + "\n".join(_rows)
 
     mo.vstack([
         mo.md("## Latency Breakdown"),
@@ -1018,9 +1049,10 @@ def _(
             mo.as_html(_fig),
             mo.vstack([
                 mo.md(_table_str),
-                mo.md(f"Scaling: latency = ref \u00d7 (50/baud)^\u03b1. NRZ: no FEC/DAC/ADC.\nToF = {_L:.0f} m \u00d7 {_n_fiber}/c = {_tof_ns:.1f} ns"),
+                mo.md(f"Scaling: latency = ref \u00d7 (50/baud)$^\\alpha$ | NRZ: no FEC/DAC/ADC |\nToF = {_L:.0f} m \u00d7 {_n_fiber}/c = {_tof_ns:.1f} ns"),
             ]),
         ], justify="space-around", align="start", widths=[0.6, 0.4]),
+        mo.md("---"),
     ])
     return
 
@@ -1034,8 +1066,7 @@ def _(IMG, mo):
     | **NVIDIA Research** | 8λ × 32G NRZ | 256 Gbps | ISSCC 2026 |
     | **Lightmatter** | 16λ × 56G NRZ (bi-dir) | 896 Gbps | OFC 2026 |
     | **Lightmatter** | 16λ × 112G PAM4 | **1.8 Tbps** | 2026 |
-
-    Demonstrated: **MRM 16λ × 112G → 1.6 Tbps per fiber**""")
+    """)
     def _cimg(src, width):
         return mo.hstack([mo.image(src=src, width=width)], justify="center")
 
@@ -1043,7 +1074,7 @@ def _(IMG, mo):
         return mo.hstack([mo.md(f'<span style="font-size:14px; color:#555">{text}</span>')], justify="center")
 
     _col_32g = mo.vstack([
-        mo.md("### 32G NRZ demos"),
+        mo.md("### 32G NRZ x  8λ or 16λ"),
         _cimg(IMG / "intel_oci_system.png", "90%"),
         _cap("Intel 8λ × 32G NRZ, integrated lasers (OFC 2024)"),
         _cimg(IMG / "ayar_testboard.png", "90%"),
@@ -1053,15 +1084,26 @@ def _(IMG, mo):
     ], gap=0.3)
 
     _col_hbr = mo.vstack([
-        mo.md("### 56G / 112G demos"),
+        mo.md("### 56G NRZ x 16λ"),
         _cimg(IMG / "lightmatter-bidi.png", "90%"),
         _cap("Lightmatter 16λ × 56G NRZ bi-dir (OFC 2026)"),
+        mo.md("### 112G PAM4 x 16λ"),
         _cimg(IMG / "lightmatter-100g.png", "90%"),
         _cap("Lightmatter 16λ × 112G PAM4 (2026)"),
     ], gap=0.3)
 
     _imgs = mo.hstack([_col_32g, _col_hbr], justify="space-around", align="start", gap=1.5)
-    mo.vstack([mo.md("## MRM WDM Link Examples"), _table, _imgs])
+    mo.vstack([mo.md("## MRM WDM Link Examples"), _table, _imgs, mo.md("---")])
+    return
+
+
+@app.cell(hide_code=True)
+def _(IMG, mo):
+    mo.vstack([
+        mo.md("## DWDM Laser Source Examples"),
+        mo.image(src=IMG / "dwdm_laser_sources.png", width="100%"),
+        mo.md("---"),
+    ])
     return
 
 
@@ -1105,36 +1147,29 @@ def _(
     _io_W = _op["pjb"] * _bw_bi * pjb_overhead.value
     _pct = _io_W / (_rk["rack_power_kw"] * 1000) * 100
 
-    _warn = mo.callout(mo.md("**IO power exceeds 20% of rack budget.** Consider lower-power optics or improved laser WPE."), kind="warn") if _pct > 20 else ""
 
-    mo.vstack([
-        mo.md("## What-If System Planner"),
-        mo.hstack([rack_select, optics_config, pjb_overhead], justify="start", gap=1),
-        mo.hstack([
-            mo.md(f"""
-    ### {_rk['name']} + {_op['label']}
-
-    | Metric | Value |
+    _metric_table = mo.md(f"""| Metric | Value |
     |:-------|------:|
     | GPUs | {_rk['gpus']} |
     | **Total BW (bi-dir)** | **{_bw_bi:,.0f} Tbps** |
     | BW/fiber | {_bw_fib} Tbps |
     | **Total fibers** | **{_total_fibers:,}** |
     | Total lanes | {_total_lanes:,} |
-    | Photonic engines | {_total_engines:,} |
-    """),
-            mo.vstack([
-                mo.md(f"""
-    | Power | |
+    | Photonic engines | {_total_engines:,} |""")
+
+    _power_table = mo.md(f"""| Power | Value |
     |:------|------:|
     | Energy/bit | {_op['pjb']:.2f} pJ/b |
     | IO power ({pjb_overhead.value:.1f}\u00d7) | **{_io_W:,.0f} W** |
     | Rack budget | {_rk['rack_power_kw']} kW |
-    | **% for IO** | **{_pct:.1f}%** |
-    """),
-                _warn,
-            ]),
-        ], justify="space-around", widths=[0.5, 0.5]),
+    | **% for IO** | **{_pct:.1f}%** |""")
+
+    mo.vstack([
+        mo.md("## Hypothetical  1.6Tbps/fiber CPO in a Rack "),
+        mo.hstack([rack_select, optics_config, pjb_overhead], justify="start", gap=1),
+        mo.md(f"""### {_rk['name']} + {_op['label']}"""),
+        mo.hstack([_metric_table, _power_table], widths=[0.3, 0.7], align="start"),
+        mo.md("---"),
     ])
     return
 
@@ -1145,14 +1180,15 @@ def _(mo):
     ## Summary
 
     ### System requirements on scale-up networks
-    - ~10⁴ Tbps-class interconnects per rack → Supply chain challenge
-    - Bandwidth density, power consumption, latency, reliability & error-free
+    - AI compute clusters require ~O(10<sup>4</sup>) Tbps-class interconnects per rack
+    - Huge opportunity and supply chain challenge
+    - Key metrics: bandwidth density, power consumption, latency
+    - Critical for depolyment: Reliability, link stability
 
     ### Co-packaged optics for 1.6 Tbps/fiber and beyond
     - WDM + 100+G lane rate → bandwidth density with 16λ laser arrays
     - NRZ for lowest latency
-    - Demonstrated: MRM 16λ × 112G → **1.6 Tbps per fiber**
-    - 400G-class transceivers not out of reach for Si photonics
+    - State of the art: MRM 16λ × 112G-PAM4 → **1.6 Tbps per fiber**
 
     ### Major opportunities
     - Components: fiber-to-chip couplers, efficient modulators, reliable lasers
