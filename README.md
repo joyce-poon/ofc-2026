@@ -2,6 +2,8 @@
 
 Interactive [marimo](https://marimo.io) notebook for OFC 2026 Workshop: *Chasing the Limit*.
 
+To view the slides that were presented: https://joyce-poon.github.io/ofc-2026/
+
 ## Run
 
 ```bash
