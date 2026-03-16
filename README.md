@@ -30,4 +30,3 @@ The notebook is configured with a slides layout. Use marimo's presentation mode 
 - **Latency breakdown** — stacked bar chart with per-block scaling models
 - **Modulator comparison** — MZM, MRM, and EAM architectures
 - **MRM WDM link examples** — 16-channel demonstrations
-- **Toward 400–448G** — Si PN junction bandwidth analysis
